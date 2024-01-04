@@ -1,13 +1,16 @@
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while1},
-    character::{complete::digit1, is_alphanumeric},
+    character::{
+        complete::{anychar, digit1},
+        is_alphanumeric,
+    },
     combinator::{map, peek, value},
     multi::many1,
     IResult,
 };
 
-const INPUT: &str = include_str!("../day_01_2_test.txt");
+const INPUT: &str = include_str!("../day_01_1_input.txt");
 
 fn main() {
     advent_of_code_2023::initialize();
@@ -18,8 +21,6 @@ fn main() {
 fn numbers(input: &str) -> IResult<&str, Vec<i32>> {
     fn parser(input: &str) -> IResult<&str, Option<i32>> {
         let parsed = alt((
-            // digit
-            peek(map(digit1, |str: &str| str.parse::<i32>().ok())),
             // digit spelled out
             peek(alt((
                 value(Some(1), tag("one")),
@@ -32,12 +33,9 @@ fn numbers(input: &str) -> IResult<&str, Vec<i32>> {
                 value(Some(8), tag("eight")),
                 value(Some(9), tag("nine")),
             ))),
-            // nothing
-            peek(map(take_while1(|c: char| is_alphanumeric(c as u8)), |_| {
-                None
-            })),
+            // digit
+            peek(map(anychar, |str| str.to_digit(10).map(|num| num as i32))),
         ))(input);
-
         let (rem, parsed) = parsed?;
         match rem.len() {
             2.. => Ok((&rem[1..], parsed)),
@@ -79,6 +77,7 @@ mod test {
     #[case("abcone2threexyz", vec![1, 2, 3])]
     #[case("xtwone3four", vec![2, 1, 3, 4])]
     #[case("4nineeightseven2", vec![4, 9, 8, 7, 2])]
+    #[case("vqjvxtc79mvdnktdsxcqc1sevenone", vec![7, 9, 1, 7, 1])]
     fn test_numbers(#[case] input: &str, #[case] expected: Vec<i32>) {
         advent_of_code_2023::initialize();
         match numbers(input) {
