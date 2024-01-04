@@ -1,3 +1,3 @@
 pub fn initialize() {
-    tracing_subscriber::fmt::init();
+    let _ = tracing_subscriber::fmt::try_init();
 }
