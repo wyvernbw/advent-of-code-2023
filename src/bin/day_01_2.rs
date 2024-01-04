@@ -1,13 +1,10 @@
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_while1},
-    character::{
-        complete::{char, digit1},
-        is_alphabetic, is_alphanumeric,
-    },
-    combinator::{iterator, map, map_opt, map_res, peek, recognize, value},
+    character::{complete::digit1, is_alphanumeric},
+    combinator::{map, peek, value},
     multi::many1,
-    Err, IResult, InputIter, InputTake,
+    IResult,
 };
 
 const INPUT: &str = include_str!("../day_01_2_test.txt");
@@ -51,20 +48,27 @@ fn numbers(input: &str) -> IResult<&str, Vec<i32>> {
     many1(parser)(input).map(|(rem, parsed)| (rem, parsed.into_iter().flatten().collect()))
 }
 
-fn process(input: &str) -> u32 {
+fn process(input: &str) -> i32 {
     advent_of_code_2023::initialize();
-    //let res = INPUT
-    //    .lines()
-    //    .map(|line| {})
-    //    .inspect(|el| tracing::info!(?el))
-    //    .sum::<u32>();
-    //res
-    0
+    let get_number = |digits: &[i32]| {
+        let (first, last) = digits
+            .first()
+            .zip(digits.last())
+            .expect("there should be at least 2 digits");
+        first * 10 + last
+    };
+    let res = input
+        .lines()
+        .flat_map(|line| numbers(line))
+        .map(|(_, res)| get_number(&res))
+        .inspect(|el| tracing::info!(?el))
+        .sum::<i32>();
+    res
 }
 
 #[cfg(test)]
 mod test {
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::assert_eq;
     use rstest::rstest;
 
     use crate::{numbers, process};
@@ -84,21 +88,8 @@ mod test {
     }
 
     #[test]
-    #[ignore]
     fn test_input() {
-        assert_eq!(
-            process(
-                "
-two1nine
-eightwothree
-abcone2threexyz
-xtwone3four
-4nineeightseven2
-zoneight234
-7pqrstsixteen
-        "
-            ),
-            281
-        );
+        advent_of_code_2023::initialize();
+        assert_eq!(process(include_str!("../day_01_2_test.txt")), 281);
     }
 }
