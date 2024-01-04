@@ -1,10 +1,7 @@
 use nom::{
     branch::alt,
-    bytes::complete::{tag, take_while1},
-    character::{
-        complete::{anychar, digit1},
-        is_alphanumeric,
-    },
+    bytes::complete::tag,
+    character::complete::anychar,
     combinator::{map, peek, value},
     multi::many1,
     IResult,
@@ -14,8 +11,8 @@ const INPUT: &str = include_str!("../day_01_1_input.txt");
 
 fn main() {
     advent_of_code_2023::initialize();
-    let res = process(INPUT);
-    tracing::info!("{}", res);
+    let result = process(INPUT);
+    tracing::info!(?result);
 }
 
 fn numbers(input: &str) -> IResult<&str, Vec<i32>> {
@@ -57,7 +54,7 @@ fn process(input: &str) -> i32 {
     };
     let res = input
         .lines()
-        .flat_map(|line| numbers(line))
+        .flat_map(numbers)
         .map(|(_, res)| get_number(&res))
         .inspect(|el| tracing::info!(?el))
         .sum::<i32>();
