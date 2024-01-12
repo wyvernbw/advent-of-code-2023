@@ -1,3 +1,5 @@
+use std::convert::identity;
+
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -15,10 +17,11 @@ fn main() {
 }
 
 fn process(input: &str) -> u32 {
+    let game_possible = |input: &str| game_possible(input, Game(12, 13, 14));
     input.lines().flat_map(game_possible).sum()
 }
 
-fn game_possible(input: &str) -> Option<u32> {
+fn game_possible(input: &str, max_game: Game) -> Option<u32> {
     fn game(input: &str) -> IResult<&str, u32> {
         let (rem, (_game, _space, id, _colon)) =
             tuple((tag("Game"), tag(" "), digit1, tag(": ")))(input)?;
@@ -31,8 +34,17 @@ fn game_possible(input: &str) -> Option<u32> {
         games.push(last_game);
         Ok(("", games))
     }
-    tracing::info!(games = ?parse_games(game));
-    Some(0)
+    let (_, games) = parse_games(game).ok()?;
+    let any_impossible = games
+        .iter()
+        .map(|game| game.any_greater(&max_game))
+        .any(identity);
+    tracing::info!(?games, ?any_impossible);
+    if any_impossible {
+        None
+    } else {
+        Some(id)
+    }
 }
 
 fn game_parser(input: &str) -> IResult<&str, Game> {
@@ -56,6 +68,26 @@ fn game_parser(input: &str) -> IResult<&str, Game> {
 #[derive(Debug, Default, PartialEq, Eq)]
 struct Game(u32, u32, u32);
 
+impl Game {
+    fn any_greater(&self, other: &Self) -> bool {
+        self.0 > other.0 || self.1 > other.1 || self.2 > other.2
+    }
+}
+
+impl PartialOrd for Game {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        match self.0.partial_cmp(&other.0) {
+            Some(core::cmp::Ordering::Equal) => {}
+            ord => return ord,
+        }
+        match self.1.partial_cmp(&other.1) {
+            Some(core::cmp::Ordering::Equal) => {}
+            ord => return ord,
+        }
+        self.2.partial_cmp(&other.2)
+    }
+}
+
 #[cfg(test)]
 mod day_02_1_tests {
     use rstest::rstest;
@@ -76,7 +108,7 @@ mod day_02_1_tests {
         false
     )]
     fn games(#[case] input: &str, #[case] expected: bool) {
-        let result = game_possible(input);
+        let result = game_possible(input, Game(12, 13, 14));
         assert_eq!(result.is_some(), expected);
     }
 
